@@ -25,44 +25,45 @@ The project focuses on:
 #### 1. Clone the repository
 ```bash
 git clone https://github.com/Chandramohan-97/bookscraper-airflow-pipeline.git
-2. Navigate into the project directory
-bash
-Copy code
+```
+#### 2. Navigate into the project directory
+```bash
 cd bookscraper-airflow-pipeline
-3. Give required permissions (Linux only)
-bash
-Copy code
+```
+#### 3. Give required permissions (Linux only)
+``` bash
 chmod -R 777 .
-4. Move to the Docker directory
-bash
-Copy code
+```
+#### 4. Move to the Docker directory
+``` bash
 cd Docker
-5. Start Airflow using Docker Compose
-bash
-Copy code
+```
+#### 5. Start Airflow using Docker Compose
+``` bash
 docker compose up
+```
 Wait until the webserver and scheduler containers are running.
 
-Access Airflow UI
+### Access Airflow UI
 Open your browser and visit:
 
-arduino
-Copy code
+``` arduino
 http://localhost:8082
+```
 Login credentials:
-
+```
 Username: admin
 
 Password: admin@123
-
-Stop and Clean Up
+```
+### Stop and Clean Up
 To stop containers:
 
-bash
-Copy code
+```bash
 docker compose down
+```
 To stop containers and remove volumes:
 
-bash
-Copy code
+``` bash
 docker compose down -v
+```
