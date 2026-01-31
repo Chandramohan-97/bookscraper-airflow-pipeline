@@ -1,0 +1,119 @@
+# x-airflow-image: &airflow-image
+#     build:
+#       context: ..
+#       dockerfile: Docker/Dockerfile
+#     image: book-extractor-airflow:latest
+#     pull_policy: never
+services:
+  postgres:
+    image: postgres:15.0
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow@123
+      POSTGRES_DB: airflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  # common-airflow-image: &airflow-image
+  #   build:
+  #     context: ..
+  #     dockerfile: Docker/Dockerfile
+  #   image: book-extractor-airflow:latest
+
+
+  airflow_init:
+    # <<: *airflow-image
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    image: book-extractor-airflow:latest
+    pull_policy: never
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow%40123@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/pipeline:/opt/airflow/pipeline
+      - ../airflow/config:/opt/airflow/config
+      - ../airflow/utils:/opt/airflow/utils
+    entrypoint: "/bin/bash"
+    command: >
+      -c "
+      airflow db migrate &&
+      airflow users create
+      --username admin
+      --firstname admin
+      --lastname user
+      --role Admin
+      --email something@example.com
+      --password admin@123"
+
+
+  webserver:
+    # <<: *airflow-image
+    image: book-extractor-airflow:latest
+    depends_on:
+      - airflow_init
+      - postgres
+    pull_policy: never
+
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow%40123@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/pipeline:/opt/airflow/pipeline
+      - ../airflow/config:/opt/airflow/config
+      - ../airflow/utils:/opt/airflow/utils
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/data:/opt/airflow/data
+    ports:
+      - "8082:8080"
+    command: >
+      bash -c "
+      airflow db check &&
+      airflow webserver
+       "
+
+
+  scheduler:
+    # <<: *airflow-image
+    image: book-extractor-airflow:latest
+    pull_policy: never
+    depends_on:
+      - postgres
+      - airflow_init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow%40123@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/pipeline:/opt/airflow/pipeline
+      - ../airflow/config:/opt/airflow/config
+      - ../airflow/utils:/opt/airflow/utils
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/data:/opt/airflow/data
+   
+    command: >
+       bash -c "
+       airflow db check &&
+       airflow scheduler
+        "
+
+volumes:
+  postgres_data:

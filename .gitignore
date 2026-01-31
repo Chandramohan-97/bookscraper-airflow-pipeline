@@ -1,0 +1,11 @@
+#airflow related
+airflow/*/__pycache__/
+airflow/logs/
+airflow/data/
+airflow/airflow.cfg
+airflow/airflow.db
+
+
+# ipynb files
+*.ipynb
+
